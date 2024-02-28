@@ -17,7 +17,7 @@ w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 ################################################################################
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache_resource()
 def load_contract():
 
     # Load the contract ABI
@@ -157,7 +157,7 @@ if st.button("Get Sale Reports"):
             st.markdown("### Pinata IPFS Report URI")
             report_uri = report_dictionary["args"]["reportURI"]
             report_ipfs_hash = report_uri[7:]
-            image_uri = report_dictionary["args"]["artJson"]
+            image_uri = report_dictionary["args"]["titleJson"]
             st.markdown(
                 f"The report is located at the following URI: "
                 f"{report_uri}"

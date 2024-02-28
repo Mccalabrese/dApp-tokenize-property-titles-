@@ -26,6 +26,7 @@ def pin_file_to_ipfs(data):
         headers=file_headers
     )
     print(r.json())
+    print(r.json())
     ipfs_hash = r.json()["IpfsHash"]
     return ipfs_hash
 
