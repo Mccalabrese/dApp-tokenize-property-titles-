@@ -4,6 +4,7 @@ from web3 import Web3
 from pathlib import Path
 from dotenv import load_dotenv
 import streamlit as st
+from typing import Any, List
 
 from pinata import pin_file_to_ipfs, pin_json_to_ipfs, convert_data_to_json
 
@@ -11,6 +12,38 @@ load_dotenv("env.txt")
 
 # Define and connect a new Web3 provider
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
+
+contract_address = os.getenv("SMART_CONTRACT_ADDRESS")
+
+# KryptoJobs2Go Candidate Information
+
+# Database of KryptoJobs2Go candidates including their name, digital address, rating and hourly cost per Ether.
+# A single Ether is currently valued at $1,500
+options_database = {
+    "Upload Title to IFPS": [
+        "IFPS is a decentralized server platform were your title will be searchable, however the title will only be saved on a select number of nodes.",
+        0.20,
+    ],
+    "Upload Title Blockchain": [
+        "This will save the title directly to the Ethereum blockchain, this is irreversable and a copy will remain on the ledger forever.",
+        0.33,
+    ],
+    
+}
+
+# A list of the TitleUpload options 
+options = ["Upload Title to IFPS", "Upload Title Blockchain"]
+
+
+def get_option():
+    """Display the database of TitleUpload information."""
+    db_list = list(options_database.values())
+
+    for option in range(len(options)):
+        st.write("More Info: ", db_list[option][0])
+        st.write("Cost of upload in Ether: ", db_list[option][1], "eth")
+        st.text(" \n")
+
 
 ################################################################################
 # Load_Contract Function
@@ -24,8 +57,7 @@ def load_contract():
     with open(Path('./contracts/compiled/titleregistry_abi.json')) as f:
         contract_abi = json.load(f)
 
-    # Set the contract address (this is the address of the deployed contract)
-    contract_address = os.getenv("SMART_CONTRACT_ADDRESS")
+
 
     # Get the contract
     contract = w3.eth.contract(
@@ -67,11 +99,26 @@ def pin_sale_report(report_content):
     return report_ipfs_hash
 
 
+
+# if st.button("Send Transaction"):
+
 st.title("Title Registry- Record Sale System")
 st.write("Choose an account to get started")
 accounts = w3.eth.accounts
 address = st.selectbox("Select Account", options=accounts)
 st.markdown("---")
+
+ # 1. Build a new tx
+transaction = {
+    'from': address,
+    'to': contract_address,
+    'value': 2000000000,
+    'nonce': w3.eth.get_transaction_count(address),
+    'gas': 200000,
+    'maxFeePerGas': 2000000000,
+    'maxPriorityFeePerGas': 1000000000,
+    'chainId': 1337,
+}
 
 ################################################################################
 # Register New Artwork
@@ -84,13 +131,33 @@ initial_sale_value = st.text_input("Enter the initial sale amount")
 # Use the Streamlit `file_uploader` function create the list of digital image file types(jpg, jpeg, or png) that will be uploaded to Pinata.
 file = st.file_uploader("Upload Title", type=["jpg", "jpeg", "png", "pdf"])
 
+upload_options = st.selectbox("Select an Option", options)
+
+choice = options_database[upload_options][0]
+choice_cost = options_database[upload_options][1]
+st.write("## Option Types, and Cost")
+st.write(choice)
+st.write(choice_cost)
+
 if st.button("Register Title"):
     # Use the `pin_artwork` helper function to pin the file to IPFS
+
     title_ipfs_hash, token_json = pin_title(title_name, file)
 
     title_uri = f"ipfs://{title_ipfs_hash}"
 
-    tx_hash = contract.functions.registerTitle(
+
+
+# 2. Sign tx with a private key
+    pk="0xd9f4f8522eab2523dcf00ab844c207d6852ed2ae8ac57f3044f13dc14fe20d9b"
+    signed = w3.eth.account.sign_transaction(transaction, pk)
+
+# 3. Send the signed transaction
+    tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+    tx = w3.eth.get_transaction(tx_hash)
+    assert tx["from"] == address
+
+    tx_hash_NFT = contract.functions.registerTitle(
         address,
         title_name,
         owner_name,
@@ -98,7 +165,7 @@ if st.button("Register Title"):
         title_uri,
         token_json['image']
     ).transact({'from': address, 'gas': 1000000})
-    receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+    receipt = w3.eth.waitForTransactionReceipt(tx_hash_NFT)
     st.write("Transaction receipt mined:")
     st.write(dict(receipt))
     st.write("You can view the pinned metadata file with the following IPFS Gateway Link")
@@ -169,3 +236,6 @@ if st.button("Get Sale Reports"):
             st.image(f'https://ipfs.io/ipfs/{image_uri}')
     else:
         st.write("This title has no new sale reports")
+
+
+
