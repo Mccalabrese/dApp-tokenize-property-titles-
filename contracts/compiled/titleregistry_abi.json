@@ -261,6 +261,50 @@
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "Jurisdiction",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "initialSaleValue",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "titleURI",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "tokenJSON",
+				"type": "string"
+			}
+		],
+		"name": "registerTitle",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "from",
 				"type": "address"
 			},
@@ -431,45 +475,14 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "Jurisdiction",
-				"type": "string"
-			},
-			{
 				"internalType": "uint256",
-				"name": "initialSaleValue",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "titleURI",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "tokenJSON",
-				"type": "string"
-			}
-		],
-		"name": "registerTitle",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
+				"name": "amount",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "nonpayable",
+		"name": "payForService",
+		"outputs": [],
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -536,6 +549,25 @@
 			}
 		],
 		"name": "Sale",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "ServicePayment",
 		"type": "event"
 	},
 	{
