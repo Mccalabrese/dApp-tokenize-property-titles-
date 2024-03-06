@@ -15,6 +15,8 @@ w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
 contract_address = os.getenv("SMART_CONTRACT_ADDRESS")
 
+to_address = "0xbAe56c0Dd1F09f5849E8A473dA192977981a9ECF"
+
 # KryptoJobs2Go Candidate Information
 
 # Database of KryptoJobs2Go candidates including their name, digital address, rating and hourly cost per Ether.
@@ -98,6 +100,28 @@ def pin_sale_report(report_content):
     report_ipfs_hash = pin_json_to_ipfs(json_report)
     return report_ipfs_hash
 
+def pdf_to_hex(file):
+
+    """
+    Converts a PDF file to a hexadecimal string.
+    
+    Args:
+    file_path (str): The path to the PDF file to be converted.
+    
+    Returns:
+    str: The hexadecimal representation of the PDF file.
+    """
+    try:
+        # Open the PDF file in binary read mode
+        with open(file, 'rb') as file_up:
+            binary_data = file_up.read()
+            
+        # Convert binary data to hexadecimal
+        hex_data = binary_data.hex()
+        
+        return hex_data
+    except Exception as e:
+        return str(e)
 
 
 # if st.button("Send Transaction"):
@@ -119,7 +143,12 @@ owner_name = st.text_input("Enter the owner's name")
 initial_sale_value = st.text_input("Enter the initial sale amount")
 
 # Use the Streamlit `file_uploader` function create the list of digital image file types(jpg, jpeg, or png) that will be uploaded to Pinata.
-file = st.file_uploader("Upload Title", type=["jpg", "jpeg", "png", "pdf"])
+uploaded_file = st.file_uploader("Upload Title", type=["jpg", "jpeg", "png", "pdf"])
+
+if uploaded_file is not None:
+    # To read file as bytes:
+    file = uploaded_file.getvalue()
+    
 
 upload_options = st.selectbox("Select an Option", options)
 
@@ -127,10 +156,9 @@ if upload_options == "Upload Title to IFPS":
     choice = options_database[upload_options][0]
     choice_cost = options_database[upload_options][1]
 
-    to_address = "0x56c31FF8a66e7aDCF370Fa0eA723056E61d55Bc6"
     value = 0
     data = 0
-    estimated_gas = w3.eth.estimateGas({
+    estimated_gas = w3.eth.estimate_gas({
         "from": address,
         "to": to_address,
         "value": value,
@@ -143,22 +171,22 @@ if upload_options == "Upload Title to IFPS":
     st.write(choice)
     st.write(transaction_value_IFPS)
 
-    if st.button("Register Title"):
+    if uploaded_file is not None and initial_sale_value is not "" and  st.button("Register Title"):
         transaction_IFPS = {
             "from": address,
             "to": to_address,
             "value": transaction_value_IFPS,
         }
-        tx_hash = w3.eth.sendTransaction(transaction_IFPS)
+        tx_hash = w3.eth.send_transaction(transaction_IFPS)
         st.write(tx_hash)
-        receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
         receipt_dict = dict(receipt)
         st.write(receipt_dict)
 
         if receipt_dict.get("status") == 1:
         
 
-            title_ipfs_hash, token_json = pin_title(title_name, file)
+            title_ipfs_hash, token_json = pin_title(title_name, uploaded_file)
 
             title_uri = f"ipfs://{title_ipfs_hash}"
 
@@ -170,7 +198,7 @@ if upload_options == "Upload Title to IFPS":
                 title_uri,
                 token_json['image']
             ).transact({'from': address, 'gas': 1000000})
-            receipt = w3.eth.waitForTransactionReceipt(tx_hash_NFT)
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash_NFT)
             st.write("Transaction receipt mined:")
             st.write(dict(receipt))
             st.write("You can view the pinned metadata file with the following IPFS Gateway Link")
@@ -182,17 +210,22 @@ if upload_options == "Upload Title Blockchain":
     choice = options_database[upload_options][0]
     choice_cost = options_database[upload_options][1]
 
-    to_address = "0x56c31FF8a66e7aDCF370Fa0eA723056E61d55Bc6"
     value = 0
-    data = 0
-    estimated_gas = w3.eth.estimateGas({
-        "from": address,
-        "to": to_address,
-        "value": value,
-        "data": data,
-    })
-    transaction_value_BLOC = estimated_gas * 2 
-    
+    data = pdf_to_hex(file)
+
+  # Make sure this returns a hex string, not None
+    if data is not None:
+        estimated_gas = w3.eth.estimate_gas ({
+            'from': address,
+            'to': contract_address,
+            "value": value,
+            'data': data,  # The data field should be the hex string
+            # Add other necessary transaction fields
+        })
+    else:
+        print("Failed to convert PDF to hex.")
+        transaction_value_BLOC = estimated_gas * 2 
+
     
     st.write("## Option Types, and Cost")
     st.write(choice)
