@@ -108,21 +108,11 @@ accounts = w3.eth.accounts
 address = st.selectbox("Select Account", options=accounts)
 st.markdown("---")
 
- # 1. Build a new tx
-transaction = {
-    'from': address,
-    'to': contract_address,
-    'value': 2000000000,
-    'nonce': w3.eth.get_transaction_count(address),
-    'gas': 200000,
-    'maxFeePerGas': 2000000000,
-    'maxPriorityFeePerGas': 1000000000,
-    'chainId': 1337,
-}
+################################################################################
+# Register New Title
+################################################################################
 
-################################################################################
-# Register New Artwork
-################################################################################
+
 st.markdown("## Register New Title")
 title_name = st.text_input("Enter the name of the title (Address recomended)")
 owner_name = st.text_input("Enter the owner's name")
@@ -133,50 +123,99 @@ file = st.file_uploader("Upload Title", type=["jpg", "jpeg", "png", "pdf"])
 
 upload_options = st.selectbox("Select an Option", options)
 
-choice = options_database[upload_options][0]
-choice_cost = options_database[upload_options][1]
-st.write("## Option Types, and Cost")
-st.write(choice)
-st.write(choice_cost)
+if upload_options == "Upload Title to IFPS":
+    choice = options_database[upload_options][0]
+    choice_cost = options_database[upload_options][1]
 
-if st.button("Register Title"):
-    # Use the `pin_artwork` helper function to pin the file to IPFS
+    to_address = "0x56c31FF8a66e7aDCF370Fa0eA723056E61d55Bc6"
+    value = 0
+    data = 0
+    estimated_gas = w3.eth.estimateGas({
+        "from": address,
+        "to": to_address,
+        "value": value,
+        "data": data,
+    })
+    transaction_value_IFPS = estimated_gas * 20
 
-    title_ipfs_hash, token_json = pin_title(title_name, file)
+    
+    st.write("## Option Types, and Cost")
+    st.write(choice)
+    st.write(transaction_value_IFPS)
 
-    title_uri = f"ipfs://{title_ipfs_hash}"
+    if st.button("Register Title"):
+        transaction_IFPS = {
+            "from": address,
+            "to": to_address,
+            "value": transaction_value_IFPS,
+        }
+        tx_hash = w3.eth.sendTransaction(transaction_IFPS)
+        st.write(tx_hash)
+        receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+        receipt_dict = dict(receipt)
+        st.write(receipt_dict)
+
+        if receipt_dict.get("status") == 1:
+        
+
+            title_ipfs_hash, token_json = pin_title(title_name, file)
+
+            title_uri = f"ipfs://{title_ipfs_hash}"
+
+            tx_hash_NFT = contract.functions.registerTitle(
+                address,
+                title_name,
+                owner_name,
+                int(initial_sale_value),
+                title_uri,
+                token_json['image']
+            ).transact({'from': address, 'gas': 1000000})
+            receipt = w3.eth.waitForTransactionReceipt(tx_hash_NFT)
+            st.write("Transaction receipt mined:")
+            st.write(dict(receipt))
+            st.write("You can view the pinned metadata file with the following IPFS Gateway Link")
+            st.markdown(f"[Title IPFS Gateway Link](https://ipfs.io/ipfs/{title_ipfs_hash})")
+            st.markdown(f"[Title IPFS Image Link](https://ipfs.io/ipfs/{token_json['image']})")
 
 
+if upload_options == "Upload Title Blockchain":
+    choice = options_database[upload_options][0]
+    choice_cost = options_database[upload_options][1]
 
-# 2. Sign tx with a private key
-    pk="0xd9f4f8522eab2523dcf00ab844c207d6852ed2ae8ac57f3044f13dc14fe20d9b"
-    signed = w3.eth.account.sign_transaction(transaction, pk)
+    to_address = "0x56c31FF8a66e7aDCF370Fa0eA723056E61d55Bc6"
+    value = 0
+    data = 0
+    estimated_gas = w3.eth.estimateGas({
+        "from": address,
+        "to": to_address,
+        "value": value,
+        "data": data,
+    })
+    transaction_value_BLOC = estimated_gas * 2 
+    
+    
+    st.write("## Option Types, and Cost")
+    st.write(choice)
+    st.write(transaction_value_BLOC)
 
-# 3. Send the signed transaction
-    tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
-    tx = w3.eth.get_transaction(tx_hash)
-    assert tx["from"] == address
-
-    tx_hash_NFT = contract.functions.registerTitle(
-        address,
-        title_name,
-        owner_name,
-        int(initial_sale_value),
-        title_uri,
-        token_json['image']
-    ).transact({'from': address, 'gas': 1000000})
-    receipt = w3.eth.waitForTransactionReceipt(tx_hash_NFT)
-    st.write("Transaction receipt mined:")
-    st.write(dict(receipt))
-    st.write("You can view the pinned metadata file with the following IPFS Gateway Link")
-    st.markdown(f"[Title IPFS Gateway Link](https://ipfs.io/ipfs/{title_ipfs_hash})")
-    st.markdown(f"[Title IPFS Image Link](https://ipfs.io/ipfs/{token_json['image']})")
+    if st.button("Register Title"):
+        transaction_BLOC = {
+            "from": address,
+            "to": to_address,
+            "value": transaction_value_BLOC,
+            "data": data,
+        }
+        tx_hash = w3.eth.sendTransaction(transaction_BLOC)
+        st.write(tx_hash)
+        receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+        receipt_dict = dict(receipt)
+        st.write(receipt_dict)
 
 st.markdown("---")
 
 
 ################################################################################
-# Appraise Art
+# Record New Sale
 ################################################################################
 st.markdown("## Record Sale")
 tokens = contract.functions.totalSupply().call()
