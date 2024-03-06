@@ -29,6 +29,8 @@ contract TitleRegistry is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
 
     event Sale(uint256 tokenId, uint256 saleValue, string reportURI, string titleJson);
     
+    event ServicePayment(address sender, uint256 amount);
+
     function initialize(address initialOwner) initializer public {
         __ERC721_init("Title Registry Token", "TIT");
         __ERC721Enumerable_init();
@@ -36,6 +38,13 @@ contract TitleRegistry is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
     }
+
+    function payForService(uint256 amount) public payable {
+        require(msg.value >= amount, "Insufficient payment provided");
+        // Transfer the received ETH to the designated address (replace with your address)
+        payable(address(0x56c31FF8a66e7aDCF370Fa0eA723056E61d55Bc6)).transfer(msg.value);
+        emit ServicePayment(msg.sender, msg.value); // Emit an event for tracking
+}
 
     function _authorizeUpgrade(address newImplementation)
         internal
