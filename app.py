@@ -5,9 +5,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 import streamlit as st
 from typing import Any, List
+import PyPDF2
+import re 
+
 
 from pinata import pin_file_to_ipfs, pin_json_to_ipfs, convert_data_to_json
 
+st.set_page_config(
+    page_title="Ethereum Title Records",
+    page_icon=":house:",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 load_dotenv("env.txt")
 
 # Define and connect a new Web3 provider
@@ -15,7 +24,7 @@ w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
 contract_address = os.getenv("SMART_CONTRACT_ADDRESS")
 
-to_address = "0xbAe56c0Dd1F09f5849E8A473dA192977981a9ECF"
+to_address = "0x102637329333A6aE92F418Cd48E34f67960283dd"
 
 # KryptoJobs2Go Candidate Information
 
@@ -35,16 +44,6 @@ options_database = {
 
 # A list of the TitleUpload options 
 options = ["Upload Title to IFPS", "Upload Title Blockchain"]
-
-
-def get_option():
-    """Display the database of TitleUpload information."""
-    db_list = list(options_database.values())
-
-    for option in range(len(options)):
-        st.write("More Info: ", db_list[option][0])
-        st.write("Cost of upload in Ether: ", db_list[option][1], "eth")
-        st.text(" \n")
 
 
 ################################################################################
@@ -100,28 +99,43 @@ def pin_sale_report(report_content):
     report_ipfs_hash = pin_json_to_ipfs(json_report)
     return report_ipfs_hash
 
-def pdf_to_hex(file):
-
+def pdf_to_hex(binary_data):
     """
-    Converts a PDF file to a hexadecimal string.
-    
-    Args:
-    file_path (str): The path to the PDF file to be converted.
-    
-    Returns:
-    str: The hexadecimal representation of the PDF file.
+    Converts a PDF file to a hexadecimal string, removing null bytes.
     """
     try:
-        # Open the PDF file in binary read mode
-        with open(file, 'rb') as file_up:
-            binary_data = file_up.read()
-            
-        # Convert binary data to hexadecimal
+
+        # Convert to hexadecimal
         hex_data = binary_data.hex()
-        
+
         return hex_data
     except Exception as e:
-        return str(e)
+        print(f"Error converting PDF to hex: {e}")
+        try:
+            # Remove null bytes and try again
+            filtered_data = binary_data.replace(b'\x00', b'')
+            hex_data = filtered_data.hex()
+            return hex_data
+        except Exception as e:
+            print(f"Error removing null bytes: {e}")
+            return None
+        
+# def pay_for_service(amount, pdf_data):
+#     # Convert the PDF data to hexadecimal format
+#     hex_data = pdf_to_hex(pdf_data)
+
+#     # Define the contract function call data
+#     data = {"amount": amount, "pdfData": hex_data}
+
+#     # Send a POST request to the Solidity contract endpoint
+#     response = requests.post("0x34d50B1A0796185D8Fd1f69D4f42784b6a1f0BDA", data=json.dumps(data))
+
+#     # Check if the request was successful
+#     if response.status_code == 200:
+#         result = response.json()
+#         return result
+#     else:
+#         return {"error": "Failed to call contract function"}
 
 
 # if st.button("Send Transaction"):
@@ -144,12 +158,6 @@ initial_sale_value = st.text_input("Enter the initial sale amount")
 
 # Use the Streamlit `file_uploader` function create the list of digital image file types(jpg, jpeg, or png) that will be uploaded to Pinata.
 uploaded_file = st.file_uploader("Upload Title", type=["jpg", "jpeg", "png", "pdf"])
-
-if uploaded_file is not None:
-    # To read file as bytes:
-    file = uploaded_file.getvalue()
-    
-
 upload_options = st.selectbox("Select an Option", options)
 
 if upload_options == "Upload Title to IFPS":
@@ -171,7 +179,7 @@ if upload_options == "Upload Title to IFPS":
     st.write(choice)
     st.write(transaction_value_IFPS)
 
-    if uploaded_file is not None and initial_sale_value is not "" and  st.button("Register Title"):
+    if uploaded_file is not None and initial_sale_value != "" and  st.button("Register Title"):
         transaction_IFPS = {
             "from": address,
             "to": to_address,
@@ -211,38 +219,31 @@ if upload_options == "Upload Title Blockchain":
     choice_cost = options_database[upload_options][1]
 
     value = 0
-    data = pdf_to_hex(file)
-
-  # Make sure this returns a hex string, not None
-    if data is not None:
-        estimated_gas = w3.eth.estimate_gas ({
-            'from': address,
-            'to': contract_address,
-            "value": value,
-            'data': data,  # The data field should be the hex string
-            # Add other necessary transaction fields
-        })
-    else:
-        print("Failed to convert PDF to hex.")
-        transaction_value_BLOC = estimated_gas * 2 
-
-    
+    # file_bytes = uploaded_file.read()
+    bytes_string = uploaded_file.read()
+    # data = file_bytes.hex()
+    print(bytes_string)
     st.write("## Option Types, and Cost")
     st.write(choice)
-    st.write(transaction_value_BLOC)
+    if bytes_string is not None and uploaded_file is not None and initial_sale_value != "":
+        estimated_gas = w3.eth.estimate_gas({
+            'from': address,
+            'to': to_address,
+            "value": 0,
+            'data': bytes_string, # The data field should be the hex string
+            # Add other necessary transaction fields
+        })
+        transaction_value_BLOC = estimated_gas * 2 
+        st.write(transaction_value_BLOC)
 
-    if st.button("Register Title"):
-        transaction_BLOC = {
-            "from": address,
-            "to": to_address,
-            "value": transaction_value_BLOC,
-            "data": data,
-        }
-        tx_hash = w3.eth.sendTransaction(transaction_BLOC)
-        st.write(tx_hash)
-        receipt = w3.eth.waitForTransactionReceipt(tx_hash)
-        receipt_dict = dict(receipt)
-        st.write(receipt_dict)
+        if st.button("Register Title"):
+            tx_hash = contract.functions.payForService(
+                amount=transaction_value_BLOC, 
+                pdfData=bytes_string
+            ).transact({'from': address, 'value': 0, 'gas': 10031156})
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+            receipt_dict = dict(receipt)
+            st.write(receipt_dict)
 
 st.markdown("---")
 
@@ -274,7 +275,7 @@ if st.button("Record Sale"):
         image_uri
 
     ).transact({"from": w3.eth.accounts[0]})
-    receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     st.write(receipt)
 st.markdown("---")
 
@@ -284,7 +285,7 @@ st.markdown("---")
 st.markdown("## Get the sale report history")
 title_token_id = st.number_input("Title ID", value=0, step=1)
 if st.button("Get Sale Reports"):
-    sale_filter = contract.events.Sale.createFilter(
+    sale_filter = contract.events.Sale.create_filter(
         fromBlock=0, argument_filters={"tokenId": title_token_id}
     )
     reports = sale_filter.get_all_entries()
