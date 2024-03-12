@@ -26,6 +26,7 @@ contract TitleRegistry is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     }
 
     mapping(uint256 => Title) public savedTitles;
+    mapping(address => bytes) public pdfDocuments;
 
     event Sale(uint256 tokenId, uint256 saleValue, string reportURI, string titleJson);
     
@@ -39,11 +40,15 @@ contract TitleRegistry is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         __UUPSUpgradeable_init();
     }
 
-    function payForService(uint256 amount) public payable {
+    function payForService(uint256 amount, bytes memory pdfData) 
+    public payable {
         require(msg.value >= amount, "Insufficient payment provided");
-        // Transfer the received ETH to the designated address (replace with your address)
-        payable(address(0x56c31FF8a66e7aDCF370Fa0eA723056E61d55Bc6)).transfer(msg.value);
-        emit ServicePayment(msg.sender, msg.value); // Emit an event for tracking
+        // Store the PDF data (you can modify this based on your storage needs):
+        // Example: Mapping to store multiple PDFs
+    pdfDocuments[msg.sender] = pdfData;
+    payable(address(0x56c31FF8a66e7aDCF370Fa0eA723056E61d55Bc6)).transfer(msg.value);
+
+    emit ServicePayment(msg.sender, msg.value); // Emit event for tracking
 }
 
     function _authorizeUpgrade(address newImplementation)
