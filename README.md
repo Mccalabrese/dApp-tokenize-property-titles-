@@ -9,8 +9,8 @@
 **3. Compile the contract, TitleRegistry.sol (located in contracts) in Remix IDE using solidity 0.8.24 and the EMV Version london:**
 ![image](https://github.com/Mccalabrese/dApp-tokenize-property-titles-/blob/d62eb7f0e47163effd8f0a67e1c98a639dd4c715/images/Compile%20Contract.png)
 
-**4. Deploy the contract in Remix IDE:**
-![image](https://github.com/Mccalabrese/dApp-tokenize-property-titles-/blob/d62eb7f0e47163effd8f0a67e1c98a639dd4c715/images/Deploy%20Contract.png)
+**4. Deploy the contract in Remix IDE, ensure that "Deploy with proxy" is selected and enter your ETH address:**
+![image](https://github.com/Mccalabrese/dApp-tokenize-property-titles-/blob/eb5f3ef2b1a6754a6f51543e3c4dd07099abb94f/images/Deploy%20Contract.png)
 
 
 **5. Deploy the streamlit app (app.py):**
