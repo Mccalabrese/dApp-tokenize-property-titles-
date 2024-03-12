@@ -26,10 +26,9 @@ contract_address = os.getenv("SMART_CONTRACT_ADDRESS")
 
 to_address = "0x102637329333A6aE92F418Cd48E34f67960283dd"
 
-# KryptoJobs2Go Candidate Information
+# Title Upload Options Information
 
-# Database of KryptoJobs2Go candidates including their name, digital address, rating and hourly cost per Ether.
-# A single Ether is currently valued at $1,500
+# Database of Upload Options including their name, a description, and a place holder cost that should be ignored.
 options_database = {
     "Upload Title to IFPS": [
         "IFPS is a decentralized server platform were your title will be searchable, however the title will only be saved on a select number of nodes.",
@@ -99,25 +98,6 @@ def pin_sale_report(report_content):
     report_ipfs_hash = pin_json_to_ipfs(json_report)
     return report_ipfs_hash
  
-# def pay_for_service(amount, pdf_data):
-#     # Convert the PDF data to hexadecimal format
-#     hex_data = pdf_to_hex(pdf_data)
-
-#     # Define the contract function call data
-#     data = {"amount": amount, "pdfData": hex_data}
-
-#     # Send a POST request to the Solidity contract endpoint
-#     response = requests.post("0x34d50B1A0796185D8Fd1f69D4f42784b6a1f0BDA", data=json.dumps(data))
-
-#     # Check if the request was successful
-#     if response.status_code == 200:
-#         result = response.json()
-#         return result
-#     else:
-#         return {"error": "Failed to call contract function"}
-
-
-# if st.button("Send Transaction"):
 
 st.title("Title Registry- Record Sale System")
 st.write("Choose an account to get started")
@@ -198,9 +178,7 @@ if upload_options == "Upload Title Blockchain":
     choice_cost = options_database[upload_options][1]
 
     value = 0
-    # file_bytes = uploaded_file.read()
     bytes_string = uploaded_file.read()
-    # data = file_bytes.hex()
     print(bytes_string)
     st.write("## Option Types, and Cost")
     st.write(choice)
@@ -209,8 +187,7 @@ if upload_options == "Upload Title Blockchain":
             'from': address,
             'to': to_address,
             "value": 0,
-            'data': bytes_string, # The data field should be the hex string
-            # Add other necessary transaction fields
+            'data': bytes_string, # The data field should be the bytes string
         })
         transaction_value_BLOC = estimated_gas * 2 
         st.write(transaction_value_BLOC)
@@ -241,7 +218,7 @@ if st.button("Record Sale"):
     # Make a call to the contract to get the image uri
     image_uri = str(contract.functions.imageUri(token_id).call())
     
-    # Use Pinata to pin an appraisal report for the report content
+    # Use Pinata to pin an sale report for the report content
     sale_report_ipfs_hash =  pin_sale_report(sale_report_content+image_uri)
 
     # Copy and save the URI to this report for later use as the smart contract’s `reportURI` parameter.
@@ -259,7 +236,7 @@ if st.button("Record Sale"):
 st.markdown("---")
 
 ################################################################################
-# Get Appraisals
+# Get Sale History
 ################################################################################
 st.markdown("## Get the sale report history")
 title_token_id = st.number_input("Title ID", value=0, step=1)
