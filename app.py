@@ -79,8 +79,8 @@ contract = load_contract()
 
 def pin_title(title_name, title_file):
     # Pin the file to IPFS with Pinata
-    ipfs_file_hash = pin_file_to_ipfs(title_file.getvalue())
-
+    r = pin_file_to_ipfs(title_file.getvalue())
+    ipfs_file_hash = r
     # Build a token metadata file for the artwork
     token_json = {
         "name": title_name,
@@ -98,28 +98,7 @@ def pin_sale_report(report_content):
     json_report = convert_data_to_json(report_content)
     report_ipfs_hash = pin_json_to_ipfs(json_report)
     return report_ipfs_hash
-
-def pdf_to_hex(binary_data):
-    """
-    Converts a PDF file to a hexadecimal string, removing null bytes.
-    """
-    try:
-
-        # Convert to hexadecimal
-        hex_data = binary_data.hex()
-
-        return hex_data
-    except Exception as e:
-        print(f"Error converting PDF to hex: {e}")
-        try:
-            # Remove null bytes and try again
-            filtered_data = binary_data.replace(b'\x00', b'')
-            hex_data = filtered_data.hex()
-            return hex_data
-        except Exception as e:
-            print(f"Error removing null bytes: {e}")
-            return None
-        
+ 
 # def pay_for_service(amount, pdf_data):
 #     # Convert the PDF data to hexadecimal format
 #     hex_data = pdf_to_hex(pdf_data)
